@@ -6,18 +6,22 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
-import { CommonConfigs } from '../lib/model/configs';
+import { CommonConfigs, StackConfigs } from './model/configurations';
 
 export interface InfraProps extends StackProps {
   readonly deployENV: string,
-  readonly configs: CommonConfigs
+  readonly commonConfigs: CommonConfigs
+  readonly stackConfigs: StackConfigs
+  readonly stackName: string
 }
 
 export class InfraStack extends Stack {
   constructor(scope: Construct, id: string, props: InfraProps) {
     super(scope, id, props);
     const deployENV = props.deployENV
-    const configs = props.configs
+    const commonConfigs = props.commonConfigs
+    const stackConfigs = props.stackConfigs
+    const stackName = props.stackName
 
     //Function to create a parameter in SSM.
     function createParameter(name: string, value: string, context: any) {
@@ -27,30 +31,30 @@ export class InfraStack extends Stack {
       })
     }
 
-    const AZs = configs.AZs
+    const AZs = commonConfigs.AZs
     //AZs out to parameter store
     const azParam = createParameter("/configs/availabilityZones", AZs.toString(), this)
 
-    const accountId = configs.account
+    const accountId = stackConfigs.account
     //Account ID out to parameter store
     const accountIdParam = createParameter("/configs/accountId", accountId, this)
     
 
     //VPC
     const vpc = new ec2.Vpc(this, `${this.stackName}VPC`, {
-      cidr: configs.cidr,
+      cidr: stackConfigs.cidr,
       natGateways: 1,
       availabilityZones: this.availabilityZones,
       subnetConfiguration: [
         {
           name: 'private-subnet',
           subnetType: ec2.SubnetType.PRIVATE_WITH_NAT,
-          cidrMask: configs.cidrMask,
+          cidrMask: stackConfigs.cidrMask,
         },
         {
           name: 'public-subnet',
           subnetType: ec2.SubnetType.PUBLIC,
-          cidrMask: configs.cidrMask,
+          cidrMask: stackConfigs.cidrMask,
         }
       ],
     });
@@ -74,8 +78,8 @@ export class InfraStack extends Stack {
     
 
     //ECR Repo.
-    const ecrRepo = new ecr.Repository(this, `${configs.ecrRepo}Repo`, {
-      repositoryName: configs.ecrRepo,
+    const ecrRepo = new ecr.Repository(this, `${stackConfigs.ecrRepo}Repo`, {
+      repositoryName: stackConfigs.ecrRepo,
       //repo needs to be deleted manually as it cannot be deleted by destroying the stack if it contains images
       removalPolicy: RemovalPolicy.RETAIN
     })

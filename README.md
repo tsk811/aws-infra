@@ -8,7 +8,6 @@ Please customize this stack by adding or removing the constructs which may or ma
 ** Please note that some of the AWS resources which are created by this stack are not covered under AWS Free tier. **
 
 ## Resources
-
 * VPC with 3 Public and 3 Private subnets along with a NAT Gateway.
 * ECR Repo
 * ECS Cluster
