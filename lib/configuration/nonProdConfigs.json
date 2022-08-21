@@ -1,0 +1,8 @@
+{
+    "account": "<AccountNumber>",
+    "region": "us-east-1",
+    "ecrRepo": "<RepoName>",
+    "cidr": "10.0.0.0/16",
+    "cidrMask": 24,
+    "AZs": ["us-east-1a", "us-east-1b","us-east-1c"]
+}
