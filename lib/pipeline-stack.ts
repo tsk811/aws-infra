@@ -57,6 +57,7 @@ export class PipelineStack extends Stack {
         {
           stageName: "Source",
           actions: [
+            // Checkout the code from Code Commit repo for every push
             new codepipeline_actions.CodeCommitSourceAction(
               {
                 actionName: "Code_Commit_Pull",
@@ -70,6 +71,7 @@ export class PipelineStack extends Stack {
         {
           stageName: "CDK_Build",
           actions: [
+            //Build CFN templates for infra and pipeline
             new codepipeline_actions.CodeBuildAction({
               actionName: "CDK_Build",
               input: sourceOut,
@@ -82,6 +84,7 @@ export class PipelineStack extends Stack {
         {
           stageName: "Pipeline_Update",
           actions: [
+            //Deploy the Pipeline stack to update pipeline if there are any changes
             new codepipeline_actions.CloudFormationCreateUpdateStackAction({
               actionName: "Self_Mutate",
               templatePath: cdkBuildOut.atPath(`${stackName}.template.json`),
@@ -93,6 +96,7 @@ export class PipelineStack extends Stack {
         {
           stageName: "Non_Prod_Deployment",
           actions: [
+            // Deploy the Infra to Non Prod account
             new codepipeline_actions.CloudFormationCreateUpdateStackAction({
               actionName: "Deploy_Non_Prod_Infra",
               templatePath: cdkBuildOut.atPath(`${nonProdInfraStack.stackName}.template.json`),
@@ -103,6 +107,7 @@ export class PipelineStack extends Stack {
         {
           stageName: "Approval",
           actions: [
+            // Manual Approval stage
             new codepipeline_actions.ManualApprovalAction({
               actionName: "Manual_Approval",
               // notifyEmails:"Emailhere". Slack integration coming soon.
@@ -112,6 +117,7 @@ export class PipelineStack extends Stack {
         {
           stageName: "Prod_Infra_Deployment",
           actions: [
+            // Deploy the infra to Prod account.
             new codepipeline_actions.CloudFormationCreateUpdateStackAction({
               actionName: "Deploy_Non_Prod_Infra",
               templatePath: cdkBuildOut.atPath(`${prodInfraStack.stackName}.template.json`),
