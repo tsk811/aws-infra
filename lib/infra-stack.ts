@@ -84,8 +84,8 @@ export class InfraStack extends Stack {
       removalPolicy: RemovalPolicy.RETAIN
     })
 
-    //ECR permissions.
-    ecrRepo.grantPullPush(new iam.AccountPrincipal( props.deployENV == "Prod" ? commonConfigs.account.nonProd : commonConfigs.account.nonProd))
+    //ECR permissions to push image from non prod account
+    ecrRepo.grantPullPush(new iam.AccountPrincipal(commonConfigs.account.nonProd))
  
     //ECR repo name out to parameter store.
     const ecrRepoParam = createParameter("/configs/ecrRepo", ecrRepo.repositoryName, this)
@@ -100,10 +100,10 @@ export class InfraStack extends Stack {
     //ECS cluster name out to parameter store.
     const clusterParam = createParameter("/configs/ecsCluster", ecsCluster.clusterName, this)
     
-    //HostedZoneID param
+    //HostedZoneID param(change the value to an actual zoneID)
     const hostedZoneId = createParameter("/configs/hostedZoneId", 'zoneId', this)
 
-    //HostedZoneName param
+    //HostedZoneName param(change the value to an actual zone name)
     const hostedZoneName = createParameter("/configs/hostedZoneName", 'zoneName', this)
   }
 

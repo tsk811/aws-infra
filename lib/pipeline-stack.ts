@@ -5,7 +5,6 @@ import * as kms from 'aws-cdk-lib/aws-kms';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as s3 from 'aws-cdk-lib/aws-s3'
-import * as secrets_manager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 import { App, Stack, StackProps, SecretValue } from 'aws-cdk-lib';
 import { CommonConfigs, StackConfigs } from './model/configurations';
@@ -104,7 +103,7 @@ export class PipelineStack extends Stack {
           ]
 
         },
-        {
+        {//This stage produces cloud formation templates for all the stacks.
           stageName: "CDK_Build",
           actions: [
             new codepipeline_actions.CodeBuildAction({
@@ -116,7 +115,7 @@ export class PipelineStack extends Stack {
             })
           ]
         },
-        {
+        {//This stage updates the pipeline
           stageName: "Pipeline_Update",
           actions: [
             new codepipeline_actions.CloudFormationCreateUpdateStackAction({

@@ -19,8 +19,9 @@ Please customize this stack by adding or removing the constructs which may or ma
 ## Prerequisites
 -----
 
-* It is assumed that this project code is managed in AWS Code Commit. Hosting the code in other repositories will need require changes in the code for triggers and pipeline setup. The repo name should be "global-infra" and in case of a different name, make the necessary changes under "lib/configuration".
-* If the Production account is different than the one where Pipeline is deployed, necessary roles should be available in Prod and pipeline's account for cross account deployment. Code changes to import those roles should be added in the pipeline stack and used accordingly.
+* Refer "[aws-prerequisites](https://github.com/tsk811/aws-prerequisites)" project for the required setup.
+* Update the account IDs and relevant configurations under "lib/configuration"
+
 
 ## Resources
 -----
@@ -28,23 +29,23 @@ Please customize this stack by adding or removing the constructs which may or ma
 * VPC with 3 Public and 3 Private subnets along with a NAT Gateway.
 * ECR Repo
 * ECS Cluster
-* S3 Bucket (to store build artifacts for other projects)
 
 
-## Flow
+## Description/How to
 -----
 
-1. Deploy "InfraPipelineStack" from local for the first time.
-2. Refer the created pipeline in Code Pipeline to visualize the flow. Pipeline will handle the deployment to Non Prod and Prod accounts.
+1. Deploy "InfraPipelineStack" from local for the first time(one time activity).
+2. Pipeline will checkout the code from Github repo for every new push to the default branch(main).
+3. CDK Build stage prepares the templates for pipeline and infrastructure.
+4. Self Mutate stage will alter the pipeline configuration if there are any changes.
+5. Infra will be then deployed to Non Prod account.
+6. Manual approval stage will be used for Production deployment approval along with a notification to required groups(Email).
+7. Infra will be then deployed to Prod account after approval.
+
+Open the Code Pipeline to visualize the flow after deployment for better understanding.
 
 ### Notes
 -----
 
-* All the resources created by this stack are saved to Parameter store. These will be referred by the other stacks.
+* All the resources created by this stack are saved to the Parameter store and the same will be referred by the other stacks.
 * Only 3 AZs are used in this stack and it is configured for "us-east-1". Specify the AZs in the configs if you need this is a different region. Specify the AZs under "lib/configuration" and in Infra stack(ref: override method for AZs) if this is needed in a different region.
-
-
-### Backlog
------
-
-* Code to enable cross account deployment(Prod)
