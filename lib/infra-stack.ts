@@ -3,7 +3,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
-import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 import { CommonConfigs, StackConfigs } from './model/configurations';
@@ -83,22 +83,12 @@ export class InfraStack extends Stack {
       //repo needs to be deleted manually as it cannot be deleted by destroying the stack if it contains images
       removalPolicy: RemovalPolicy.RETAIN
     })
+
+    //ECR permissions.
+    ecrRepo.grantPullPush(new iam.AccountPrincipal( props.deployENV == "Prod" ? commonConfigs.account.nonProd : commonConfigs.account.nonProd))
  
     //ECR repo name out to parameter store.
     const ecrRepoParam = createParameter("/configs/ecrRepo", ecrRepo.repositoryName, this)
-
-    //S3 bucket to store build artifacts.
-    const s3ArtifactBucket = new s3.Bucket(this, `${this.stackName}ArtifactBucket`, {
-      bucketName: `artifact-bucket-${accountId}`,
-      //this will create a lambda function to delete the objects inside the bucket when deleting the stack
-      removalPolicy: RemovalPolicy.DESTROY,
-      autoDeleteObjects: true,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      publicReadAccess: false
-    })
-
-    //S3 bucket name out to parameter store.
-    const s3ArtifactParam = createParameter("/configs/artifactBucket", s3ArtifactBucket.bucketName, this)
     
     //ECS cluster
     const ecsCluster = new ecs.Cluster(this, `${deployENV}Cluster`, {
@@ -109,6 +99,12 @@ export class InfraStack extends Stack {
 
     //ECS cluster name out to parameter store.
     const clusterParam = createParameter("/configs/ecsCluster", ecsCluster.clusterName, this)
+    
+    //HostedZoneID param
+    const hostedZoneId = createParameter("/configs/hostedZoneId", 'zoneId', this)
+
+    //HostedZoneName param
+    const hostedZoneName = createParameter("/configs/hostedZoneName", 'zoneName', this)
   }
 
   //This allows cdk to only pull the cofigured AZs instead of all the available ones

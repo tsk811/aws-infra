@@ -1,6 +1,6 @@
 {
-    "account": "<AccountID>",
-    "ecrRepo": "<RepoName>",
+    "account": "799771142381",
+    "ecrRepo": "file-upload-api",
     "cidr": "10.0.0.0/16",
     "cidrMask": 24
 }

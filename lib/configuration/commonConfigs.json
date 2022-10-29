@@ -1,12 +1,28 @@
 {
-    "region": "us-east-1",
+    "account": {
+        "nonProd": "799771142381",
+        "prod:": "734082183364",
+        "region": "us-east-1"
+    },
     "AZs": [
         "us-east-1a",
         "us-east-1b",
         "us-east-1c"
     ],
     "codeRepo": {
-        "name": "global-infra",
-        "defaultBranch": "master"
+        "name": "aws-infra",
+        "defaultBranch": "main"
+    },
+    "kms": {
+        "arn": "/configs/kms_key"
+    },
+    "roles": {
+        "deployRole": "/configs/ProdDeploymentRole",
+        "crossAccountRole": "/configs/CrossAccountRole"
+    },
+    "artifactBucket": "/configs/artifactBucket",
+    "secretsManager": {
+        "name": "/secrets/github_token",
+        "key": "token"
     }
 }
