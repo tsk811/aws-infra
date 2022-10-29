@@ -1,7 +1,12 @@
-import * as codepipeline from 'aws-cdk-lib/aws-codepipeline'
-import * as codeCommit from 'aws-cdk-lib/aws-codecommit'
-import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions'
-import { App, Stack, StackProps } from 'aws-cdk-lib';
+import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
+import * as codeCommit from 'aws-cdk-lib/aws-codecommit';
+import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
+import * as kms from 'aws-cdk-lib/aws-kms';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as s3 from 'aws-cdk-lib/aws-s3'
+import { Construct } from 'constructs';
+import { App, Stack, StackProps, SecretValue } from 'aws-cdk-lib';
 import { CommonConfigs, StackConfigs } from './model/configurations';
 import { InfraStack } from './infra-stack';
 
@@ -23,12 +28,36 @@ export class PipelineStack extends Stack {
 
     const commonConfigs = props.commonConfigs
     const nonProdInfraStack = props.nonProdInfraStack
+    const nonProdConfigs = props.nonProdConfigs
+    const prodConfigs = props.prodConfigs
     const prodInfraStack = props.prodInfraStack
     const stackName = props.stackName;
+
+    function getValueFromParameterStore(name: string, stack: Construct) {
+      return (ssm.StringParameter.fromStringParameterAttributes(stack, `${name}Parameter`, {
+        parameterName: name
+      })).stringValue
+    }
 
     //Some required imports
     const codeRepository = codeCommit.Repository.fromRepositoryName(this, `${commonConfigs.codeRepo.name}Repository`,
       commonConfigs.codeRepo.name)
+
+    const kms_key = kms.Key.fromKeyArn(this, "EncryptionKey",
+      getValueFromParameterStore(commonConfigs.kms.arn, this))
+
+    const prodDeployRole = iam.Role.fromRoleArn(this, "ProdDeployRole",
+      getValueFromParameterStore(commonConfigs.roles.deployRole, this), { mutable: false })
+
+    const crossAccountRole = iam.Role.fromRoleArn(this, "CrossAccountRole",
+      getValueFromParameterStore(commonConfigs.roles.crossAccountRole, this), { mutable: false })
+
+
+    const artifactBucket = s3.Bucket.fromBucketAttributes(this, `${stackName}ArtifactBucket`, {
+      bucketName: getValueFromParameterStore(commonConfigs.artifactBucket, this),
+      encryptionKey: kms_key,
+    })
+
 
     //Artifacts
     const sourceOut = new codepipeline.Artifact("sourceOut")
@@ -53,25 +82,29 @@ export class PipelineStack extends Stack {
     //Pipeline
     const pipeline = new codepipeline.Pipeline(this, "InfraPipeline", {
       restartExecutionOnUpdate: true,
+      artifactBucket: artifactBucket,
+      crossAccountKeys: true,
       stages: [
         {
           stageName: "Source",
           actions: [
-            // Checkout the code from Code Commit repo for every push
-            new codepipeline_actions.CodeCommitSourceAction(
+            new codepipeline_actions.GitHubSourceAction(
               {
-                actionName: "Code_Commit_Pull",
+                actionName: "Github_Pull",
+                repo: commonConfigs.codeRepo.name,
+                owner: "tsk811",
+                oauthToken: SecretValue.secretsManager(commonConfigs.secretsManager.name, {
+                  jsonField: commonConfigs.secretsManager.key
+                }),
                 output: sourceOut,
-                repository: codeRepository,
-                branch: commonConfigs.codeRepo.defaultBranch,
+                branch: commonConfigs.codeRepo.defaultBranch
               })
           ]
 
         },
-        {
+        {//This stage produces cloud formation templates for all the stacks.
           stageName: "CDK_Build",
           actions: [
-            //Build CFN templates for infra and pipeline
             new codepipeline_actions.CodeBuildAction({
               actionName: "CDK_Build",
               input: sourceOut,
@@ -81,10 +114,9 @@ export class PipelineStack extends Stack {
             })
           ]
         },
-        {
+        {//This stage updates the pipeline
           stageName: "Pipeline_Update",
           actions: [
-            //Deploy the Pipeline stack to update pipeline if there are any changes
             new codepipeline_actions.CloudFormationCreateUpdateStackAction({
               actionName: "Self_Mutate",
               templatePath: cdkBuildOut.atPath(`${stackName}.template.json`),
@@ -96,7 +128,6 @@ export class PipelineStack extends Stack {
         {
           stageName: "Non_Prod_Deployment",
           actions: [
-            // Deploy the Infra to Non Prod account
             new codepipeline_actions.CloudFormationCreateUpdateStackAction({
               actionName: "Deploy_Non_Prod_Infra",
               templatePath: cdkBuildOut.atPath(`${nonProdInfraStack.stackName}.template.json`),
@@ -107,26 +138,24 @@ export class PipelineStack extends Stack {
         {
           stageName: "Approval",
           actions: [
-            // Manual Approval stage
             new codepipeline_actions.ManualApprovalAction({
               actionName: "Manual_Approval",
-              // notifyEmails:"Emailhere". Slack integration coming soon.
+              // notifyEmails:"Emailhere". Added emails which needs to be notified.
             })
           ]
         },
         {
           stageName: "Prod_Infra_Deployment",
           actions: [
-            // Deploy the infra to Prod account.
             new codepipeline_actions.CloudFormationCreateUpdateStackAction({
               actionName: "Deploy_Non_Prod_Infra",
               templatePath: cdkBuildOut.atPath(`${prodInfraStack.stackName}.template.json`),
               stackName: prodInfraStack.stackName,
-              adminPermissions: true
+              adminPermissions: true,
+              role: crossAccountRole,
+              deploymentRole: prodDeployRole
             })]
         },
-
-
       ]
     })
 

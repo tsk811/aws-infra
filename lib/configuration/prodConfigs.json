@@ -1,6 +1,6 @@
 {
-    "account": "<AccountID>",
-    "ecrRepo": "<RepoName>",
+    "account": "734082183364",
+    "ecrRepo": "demo-api",
     "cidr": "10.0.0.0/16",
     "cidrMask": 24
 }

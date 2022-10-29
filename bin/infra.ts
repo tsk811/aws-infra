@@ -15,7 +15,7 @@ const nonProdInfra = new InfraStack(app, 'NonProdInfraStack', {
     commonConfigs: commonConfigs,
     stackName: 'NonProdInfraStack',
     env: {
-        region: commonConfigs.region,
+        region: commonConfigs.account.region,
         account: nonProdConfigs.account,
     }
 });
@@ -26,7 +26,7 @@ const prodInfra = new InfraStack(app, 'ProdInfraStack', {
     commonConfigs: commonConfigs,
     stackName: 'ProdInfraStack',
     env: {
-        region: commonConfigs.region,
+        region: commonConfigs.account.region,
         account: prodConfigs.account,
     }
 });
