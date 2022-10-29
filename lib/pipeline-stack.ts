@@ -97,8 +97,7 @@ export class PipelineStack extends Stack {
                   jsonField: commonConfigs.secretsManager.key
                 }),
                 output: sourceOut,
-                // branch: commonConfigs.codeRepo.defaultBranch
-                branch: "cleanup"
+                branch: commonConfigs.codeRepo.defaultBranch
               })
           ]
 

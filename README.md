@@ -42,7 +42,7 @@ Please customize this stack by adding or removing the constructs which may or ma
 6. Manual approval stage will be used for Production deployment approval along with a notification to required groups(Email).
 7. Infra will be then deployed to Prod account after approval.
 
-Open the Code Pipeline to visualize the flow after deployment for better understanding.
+Open the Code Pipeline to visualize the flow after the pipeline deployment for better understanding.
 
 ### Notes
 -----
