@@ -3,9 +3,9 @@
 This stack contains few constructs to create basic infra setup with few other services. 
 This project will be treated as a prerequisite for other AWS projects under this user.
 
-Please customize this stack by adding or removing the constructs which may or may not be needed for your use cases. 
+Customize this stack by adding or removing the constructs which may or may not be needed for your use cases. 
 
-** Please note that some of the AWS resources which are created by this stack are not covered under AWS Free tier. **
+** Some of the AWS resources which are created by this stack are not covered under AWS Free tier. **
 
 
 ## Stacks
